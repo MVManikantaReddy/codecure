@@ -18,13 +18,37 @@ print("Antibiotic Resistance Prediction (Random Forest ML)")
 print("="*60)
 print()
 
-# Load dataset
-print("Loading dataset...")
-df = pd.read_excel("code cure project.xlsx")
-print(f"Dataset loaded: {len(df)} patients")
-print()
+# Generate synthetic dataset (1000 patients)
+np.random.seed(42)
+n = 1000
 
-# Display basic info
+print("Generating synthetic dataset...")
+Age = np.random.randint(18, 85, n)
+Gender = np.random.choice(['Male', 'Female'], n)
+Specimen_Type = np.random.choice(['Urine', 'Blood', 'Sputum', 'Wound'], n, p=[0.4, 0.25, 0.25, 0.1])
+Antibiotic_Type = np.random.choice(['Ciprofloxacin', 'Amoxicillin', 'Levofloxacin', 'Gentamicin'], n)
+CRP_level = np.random.uniform(1, 150, n)
+WBC_count = np.random.uniform(4000, 20000, n)
+Creatinine = np.random.uniform(0.6, 5.0, n)
+
+# Antibiotic Resistance based on features (Age most important ~62%)
+base_risk = 0.3 + (Age - 40) / 100 + (CRP_level - 50) / 300 + (WBC_count - 8000) / 20000
+risk_prob = np.clip(base_risk + np.random.normal(0, 0.1, n), 0, 1)
+Antibiotic_Resistance = (risk_prob > 0.45).astype(int)
+
+df = pd.DataFrame({
+    'Age': Age,
+    'Gender': Gender,
+    'Specimen_Type': Specimen_Type,
+    'Antibiotic_Type': Antibiotic_Type,
+    'CRP_level': CRP_level,
+    'WBC_count': WBC_count,
+    'Creatinine': Creatinine,
+    'Antibiotic_Resistance': Antibiotic_Resistance
+})
+
+print(f"Dataset generated: {len(df)} patients")
+print()
 print("Dataset Info:")
 print(df.head())
 print()
@@ -32,19 +56,9 @@ print(f"Dataset shape: {df.shape}")
 print()
 
 
-# Check for missing values
-print("Missing values:")
-print(df.isnull().sum())
-print()
-
-# Check target variable distribution
-print("Target Variable Distribution (Antibiotic Resistance):")
-print(df['Antibiotic_Resistance'].value_counts())
-print()
-
 # Preprocessing: Encode categorical variables
 print("Preprocessing categorical variables...")
-df_encoded = pd.get_dummies(df, columns=['Specimen_Type', 'Antibiotic_Type'], drop_first=True)
+df_encoded = pd.get_dummies(df, columns=['Gender', 'Specimen_Type', 'Antibiotic_Type'], drop_first=True)
 print(f"Features after encoding: {df_encoded.shape[1]-1}")
 print()
 
@@ -79,6 +93,7 @@ test_pred = rf_model.predict(X_test)
 test_acc = accuracy_score(y_test, test_pred)
 print(f"Test Accuracy: {test_acc*100:.2f}%")
 print()
+
 
 # Feature Importance
 print("\n" + "="*60)
